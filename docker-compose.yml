@@ -1,0 +1,48 @@
+version: "3.7"
+services:
+  mongo:
+    container_name: mongo
+    image: mongo
+    volumes:
+      - mongodb_data_container:/data/db
+    restart: on-failure
+    ports:
+      - "28000:27017"
+    networks:
+      - foldername_network
+  redis:
+    image: 'redis:alpine'
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data_container:/data
+    restart: on-failure
+    command: ["redis-server"]
+    networks:
+      - foldername_network
+  app:
+    build: .
+    depends_on:
+      - redis
+      - mongo
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=mongodb://mongo:27017/mangbot
+    restart: on-failure
+    networks:
+      - foldername_network
+  nginx:
+    build:
+      context: nginx
+    ports:
+      - "1435:80"
+    depends_on:
+      - app
+    restart: on-failure
+    networks:
+      - foldername_network
+volumes:
+  mongodb_data_container:
+  redis_data_container:
+networks:
+  foldername_network:
